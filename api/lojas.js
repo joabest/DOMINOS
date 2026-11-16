@@ -118,7 +118,8 @@ module.exports = async (req,res) => {
       headers:{Accept:'application/json','appplatform':'web','deviceid':'alphacode'},
       signal:controller.signal,
     });
-    if(!upstream.ok) return res.status(502).json({error:`Serviço de lojas retornou HTTP ${upstream.status}.`});
+    if(upstream.status === 400) return res.status(422).json({error:'Não foi possível localizar lojas para este endereço. Confira o CEP e o número; se estiverem corretos, a região pode estar fora da área atendida.'});
+    if(!upstream.ok) return res.status(502).json({error:'Não foi possível consultar as lojas neste momento (HTTP '+upstream.status+').'});
     const payload=await upstream.json();
     if(payload?.status === 'error')
       return res.status(502).json({error:clean(payload.message||'Consulta de lojas recusada',200)});
