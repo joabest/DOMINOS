@@ -55,13 +55,14 @@ module.exports=async(req,res)=>{
  res.setHeader('Cache-Control','no-store');
  if(req.method!=='GET')return res.status(405).json({error:'Método não permitido'});
  const storeId=String(req.query.storeId??'');
+ const deliveryType=req.query.deliveryType==='TAKEOUT'?'TAKEOUT':'DELIVERY';
  if(!/^\d{1,8}$/.test(storeId))return res.status(400).json({error:'ID da loja inválido'});
  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),9000);
  try{
   const headers={Accept:'application/json',appplatform:'web',deviceid:'alphacode'};
   const paths=[
    'getMenu/?storeId='+encodeURIComponent(storeId),
-   'getThematicMenu/?storeId='+encodeURIComponent(storeId)+'&deliveryType=DELIVERY'
+   'getThematicMenu/?storeId='+encodeURIComponent(storeId)+'&deliveryType='+deliveryType
   ];
   const results=await Promise.all(paths.map(async path=>{
    try{
