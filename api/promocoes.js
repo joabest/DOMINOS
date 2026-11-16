@@ -6,11 +6,12 @@ module.exports=async(req,res)=>{
  res.setHeader('Cache-Control','no-store');
  if(req.method!=='GET')return res.status(405).json({error:'Método não permitido'});
  const storeId=String(req.query.storeId??'');
+ const deliveryType=req.query.deliveryType==='TAKEOUT'?'TAKEOUT':'DELIVERY';
  if(!/^\d{1,8}$/.test(storeId))return res.status(400).json({error:'ID da loja inválido'});
  const ctrl=new AbortController();
  const timeout=setTimeout(()=>ctrl.abort(),10000);
  try{
-  const query=new URLSearchParams({storeId,deliveryType:'DELIVERY'});
+  const query=new URLSearchParams({storeId,deliveryType});
   const request=await fetch(BASE+'getBestCoupons/?'+query,{headers:{Accept:'application/json',appplatform:'web',deviceid:'alphacode'},signal:ctrl.signal});
   if(!request.ok)return res.status(502).json({error:'Serviço de promoções indisponível (HTTP '+request.status+').'});
   const payload=await request.json();
