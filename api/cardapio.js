@@ -8,8 +8,23 @@ const price = x => {
   return Number.isFinite(n) && n>=0 && n<100000 ? n : null;
 };
 const imageUrl=x=>{
-  const s=str(x,1000);
-  return /^https:\/\//.test(s)?s:null;
+ const read=(value,depth=0)=>{
+  if(!value||depth>4)return null;
+  if(Array.isArray(value))return value.map(v=>read(v,depth+1)).find(Boolean)||null;
+  if(typeof value==='object'){
+   const keys=['url','src','imageUrl','imageURL','imagePath','image','path','fullUrl','original','large','medium','thumbnail','desktop','mobile','file'];
+   return keys.map(k=>read(value[k],depth+1)).find(Boolean)||null;
+  }
+  const uri=str(value,1200).trim();
+  if(/^https:\/\//i.test(uri))return uri;
+  if(/^\/\//.test(uri))return 'https:'+uri;
+  return null;
+ };
+ return read(x);
+};
+const pickImage=obj=>{
+ const keys=['imageUrl','imageURL','productImage','productImageUrl','imagePath','image','images','picture','pictureUrl','photo','photoUrl','thumbnail','thumbnailUrl','banner','bannerUrl','media','photos','imageDesktop','desktopImage'];
+ return keys.map(k=>imageUrl(obj[k])).find(Boolean)||null;
 };
 function parseCatalog(payload){
  const products=[],seen=new Set();let nodes=0;
@@ -25,8 +40,8 @@ function parseCatalog(payload){
    const key=str(id??name)+'|'+str(name);
    if(!seen.has(key)){
     seen.add(key);
-    const rawImage=first(obj.imageUrl,obj.image,obj.picture,obj.photo,obj.thumbnail);
-    products.push({id:str(id??key,80),name:str(name,160),category:str(first(obj.categoryName,obj.category?.name,category,'Cardápio'),85),description:str(first(obj.description,obj.subtitle,''),330),price:price(p),image:imageUrl(typeof rawImage==='object'?first(rawImage.url,rawImage.src):rawImage)});
+    const productImage=pickImage(obj);
+    products.push({id:str(id??key,80),name:str(name,160),category:str(first(obj.categoryName,obj.category?.name,category,'Cardápio'),85),description:str(first(obj.description,obj.subtitle,''),330),price:price(p),image:productImage});
    }
    return;
   }
