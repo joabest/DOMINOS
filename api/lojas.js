@@ -34,6 +34,28 @@ function normalize(payload) {
   }
 
   const data = payload?.data ?? payload;
+  // O provedor devolve modalidades separadas: não eliminar a mesma loja de
+  // delivery e takeout, pois taxas, horário e disponibilidade podem diferir.
+  if (data && typeof data === 'object' && !Array.isArray(data) &&
+      (Array.isArray(data.delivery) || Array.isArray(data.takeout))) {
+    const items = [
+      ...(data.delivery || []).map(x => ({...x, deliveryType:'DELIVERY'})),
+      ...(data.takeout || []).map(x => ({...x, deliveryType:'TAKEOUT'}))
+    ];
+    return items.filter(x => x && x.id != null).slice(0,100).map(x => ({
+      id:clean(x.id,50),
+      name:clean(x.name || 'Loja'),
+      address:clean([x.street,x.number,x.neighborhood,x.city,x.state].filter(Boolean).join(', '),260),
+      deliveryType:x.deliveryType,
+      isOpen:x.isOpen === true,
+      isActive:x.isActive === true,
+      available:x.status === true,
+      deliveryFee:Number.isFinite(Number(x.deliveryFee)) ? Number(x.deliveryFee) : null,
+      openTime:clean(x.hoursOperation?.openTime || '',10),
+      closeTime:clean(x.hoursOperation?.closeTime || '',10),
+      distance:Number.isFinite(Number(x.distance)) ? Number(x.distance) : null
+    }));
+  }
   // Uma lista vazia é uma resposta válida: nenhuma loja disponível.
   if (Array.isArray(data) && data.length === 0) return [];
   walk(data);
